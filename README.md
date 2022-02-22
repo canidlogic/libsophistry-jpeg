@@ -1,4 +1,4 @@
-# libsophistry-jpeg specification
+# libsophistry-jpeg README
 
 ## 1. Introduction
 
