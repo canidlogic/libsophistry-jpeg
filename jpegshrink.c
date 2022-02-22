@@ -288,7 +288,12 @@ static void jpegshrink_padscan(
 /*
  * jpegshrink function.
  */
-int jpegshrink(FILE *pIn, FILE *pOut, int sval, int q) {
+int jpegshrink(
+          FILE              * pIn,
+          FILE              * pOut,
+          int                 sval,
+          int                 q,
+    const JPEGSHRINK_BOUNDS * pBounds) {
   
   int status = 1;
   int retval = SPH_JPEG_ERR_OK;
@@ -301,6 +306,10 @@ int jpegshrink(FILE *pIn, FILE *pOut, int sval, int q) {
   int32_t out_samples = 0;
   int32_t pad_height = 0;
   int32_t pad_count = 0;
+  
+  int32_t long_dim = 0;
+  int32_t short_dim = 0;
+  int64_t pix_count = 0;
   
   int32_t y = 0;
   int32_t i = 0;
@@ -319,7 +328,7 @@ int jpegshrink(FILE *pIn, FILE *pOut, int sval, int q) {
   if ((sval < 1) || (sval > JPEGSHRINK_MAXSHRINK)) {
     abort();
   }
-  
+
   /* Open the input file */
   pr = sph_jpeg_reader_new(pIn);
   if (sph_jpeg_reader_status(pr) != SPH_JPEG_ERR_OK) {
@@ -351,6 +360,54 @@ int jpegshrink(FILE *pIn, FILE *pOut, int sval, int q) {
     }
     if ((in_height % sval) != 0) {
       out_height++;
+    }
+  }
+  
+  /* If there are constraints, check them */
+  if (status && (pBounds != NULL)) {
+    
+    /* Figure out long dimension and short dimension */
+    if (out_height > out_width) {
+      long_dim = out_height;
+      short_dim = out_width;
+    } else {
+      long_dim = out_width;
+      short_dim = out_height;
+    }
+    
+    /* Figure out total pixel count */
+    pix_count = ((int64_t) out_width) * ((int64_t) out_height);
+    
+    /* Check constraints */
+    if (pBounds->max_long >= 0) {
+      if (long_dim > pBounds->max_long) {
+        status = 0;
+      }
+    }
+    if (pBounds->max_short >= 0) {
+      if (short_dim > pBounds->max_short) {
+        status = 0;
+      }
+    }
+    if (pBounds->max_width >= 0) {
+      if (out_width > pBounds->max_width) {
+        status = 0;
+      }
+    }
+    if (pBounds->max_height >= 0) {
+      if (out_height > pBounds->max_height) {
+        status = 0;
+      }
+    }
+    if (pBounds->max_pixels >= 0) {
+      if (pix_count > pBounds->max_pixels) {
+        status = 0;
+      }
+    }
+    
+    /* If failure, set retval to -1 */
+    if (!status) {
+      retval = -1;
     }
   }
   
@@ -469,9 +526,12 @@ int jpegshrink(FILE *pIn, FILE *pOut, int sval, int q) {
   }
   
   /* If there is an error, get the return value as the error status from
-   * the reader; otherwise, leave the return value set to OK */
+   * the reader, unless the retval is set to -1; otherwise, leave the
+   * return value set to OK or -1 */
   if (!status) {
-    retval = sph_jpeg_reader_status(pr);
+    if (retval != -1) {
+      retval = sph_jpeg_reader_status(pr);
+    }
   }
   
   /* Free reader and writer if allocated */
