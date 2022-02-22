@@ -33,6 +33,47 @@
 #define JPEGSHRINK_MAXSHRINK (16)
 
 /*
+ * Structure for declaring output dimension constraints.
+ */
+typedef struct {
+  
+  /*
+   * The maximum "long" dimension value in pixels, or -1 if this is not
+   * constrained.
+   * 
+   * The long dimension is the larger of the width and the height, or
+   * the width if the width and height are equal.
+   */
+  int32_t max_long;
+  
+  /*
+   * The maximum "short" dimension value in pixels, or -1 if this is not
+   * constrained.
+   * 
+   * The short dimension is the smaller of the width and the height, or
+   * the height if the width and height are equal.
+   */
+  int32_t max_short;
+  
+  /*
+   * The maximum width in pixels, or -1 if this is not constrained.
+   */
+  int32_t max_width;
+  
+  /*
+   * The maximum height in pixels, or -1 if this is not constrained.
+   */
+  int32_t max_height;
+  
+  /*
+   * The maximum pixel count (width * height), or -1 if this is not
+   * constrained.
+   */
+  int32_t max_pixels;
+  
+} JPEGSHRINK_BOUNDS;
+
+/*
  * Perform a shrink operation.
  * 
  * pIn is the handle to the input JPEG file to shrink.  The handle must
@@ -67,10 +108,20 @@
  * passed through to sophistry_jpeg.  See sph_jpeg_writer_new() for the
  * meaning of this parameter.
  * 
- * The return value is a sophistry_jpeg status code.  It is zero (or
- * SPH_JPEG_ERR_OK) if the operation was successful, else it is a
- * sophistry_jpeg error code.  sph_jpeg_errstr() can be used to convert
- * the error code into a message for the user.
+ * pBounds points to an output image constraints structure, or is NULL
+ * if there are no constraints.  Passing NULL is equivalent to passing
+ * a bounds structure with all bounds set to -1.  After reading the
+ * width and height of the input image, the dimensions of the output
+ * image will be computed.  If these dimensions do not satisfy ALL of
+ * the constraints that are present in the bounds structure, the
+ * function will fail with an error code of -1.
+ * 
+ * The return value is a sophistry_jpeg status code, or -1 if the
+ * function failed because the output constraints were not satisfied.
+ * It is zero (or SPH_JPEG_ERR_OK) if the operation was successful, else
+ * it is a sophistry_jpeg error code or -1.  sph_jpeg_errstr() can be
+ * used to convert the error code (except for -1) into a message for the
+ * user.  If pBounds is NULL, -1 will never be returned.
  * 
  * Parameters:
  * 
@@ -82,11 +133,18 @@
  * 
  *   q - the compression quality
  * 
+ *   pBounds - the output image constraints, or NULL
+ * 
  * Return:
  * 
  *   SPH_JPEG_ERR_OK (0) if successful, otherwise a sophistry_jpeg error
- *   code
+ *   code, or -1 if the output constraints are not satisfied
  */
-int jpegshrink(FILE *pIn, FILE *pOut, int sval, int q);
+int jpegshrink(
+          FILE              * pIn,
+          FILE              * pOut,
+          int                 sval,
+          int                 q,
+    const JPEGSHRINK_BOUNDS * pBounds);
 
 #endif
