@@ -136,9 +136,9 @@ METHODDEF(void) sph_jpeg_error_exit(j_common_ptr cinfo);
  * The custom error handler for libjpeg.
  */
 METHODDEF(void) sph_jpeg_error_exit(j_common_ptr cinfo) {
-  
+
   /* Get pointer to our custom fields */
-  SPH_JPEG_ERRMAN *per = (SPH_JPEG_ERRMAN *) cinfo;
+  SPH_JPEG_ERRMAN *per = (SPH_JPEG_ERRMAN *) (cinfo->err);
   
   /* Jump back to error handler callback */
   longjmp(per->setjmp_buffer, 1);
@@ -364,10 +364,10 @@ SPH_JPEG_READER *sph_jpeg_reader_new(FILE *pIn) {
   
   /* Specify file handle to read from */
   jpeg_stdio_src(&(pr->cinfo), pIn);
-  
+
   /* Read file parameters */
   (void) jpeg_read_header(&(pr->cinfo), TRUE);
-  
+
   /* Start decompression */
   (void) jpeg_start_decompress(&(pr->cinfo));
   
