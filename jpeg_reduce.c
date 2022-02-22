@@ -225,7 +225,7 @@ int main(int argc, char *argv[]) {
   
   /* Perform the shrink operation */
   if (status) {
-    retval = jpegshrink(stdin, stdout, (int) rval, (int) qval);
+    retval = jpegshrink(stdin, stdout, (int) rval, (int) qval, NULL);
     if (retval != SPH_JPEG_ERR_OK) {
       fprintf(stderr, "%s: %s!\n", pModule, sph_jpeg_errstr(retval));
       status = 0;
